@@ -1,0 +1,29 @@
+{
+  "name": "bookscript",
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "serve": "vite preview"
+  },
+  "dependencies": {
+    "codemirror": "^5.62.2",
+    "element-plus": "^1.0.2-beta.65",
+    "file-saver": "^2.0.5",
+    "jszip": "^3.7.0",
+    "lodash": "^4.17.21",
+    "vue": "^3.0.5",
+    "vue-router": "^4.0.10",
+    "wangeditor": "^4.7.6"
+  },
+  "devDependencies": {
+    "@types/codemirror": "^5.60.2",
+    "@types/file-saver": "^2.0.3",
+    "@types/lodash": "^4.14.171",
+    "@vitejs/plugin-vue": "^1.3.0",
+    "@vue/compiler-sfc": "^3.0.5",
+    "typescript": "^4.3.2",
+    "vite": "^2.4.4",
+    "vue-tsc": "^0.2.2"
+  }
+}
