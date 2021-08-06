@@ -1,5 +1,5 @@
 <template lang="pug">
-div#wang-editor
+div#we(ref="we")
 el-button-group#zoom
   el-button(round icon="el-icon-zoom-out" size="medium" @click="zoomOut")
   el-button(round icon="el-icon-zoom-in" size="medium" @click="zoomIn")
@@ -19,9 +19,10 @@ const props = defineProps({
 const emit = defineEmits(['update:text', 'addImage'])
 
 let editor: Editor
+const we = ref<HTMLElement>()
 function createEditor(text: string) {
   if (editor) editor.destroy()
-  editor = new Editor('#wang-editor')
+  editor = new Editor(we.value)
   editor.config.menus = [
     'head',
     'bold',
@@ -79,7 +80,7 @@ function zoomOut() {
 </script>
 
 <style scoped>
-#wang-editor{
+#we {
   display: flex;
   flex-direction: column;
   height: 100%;
