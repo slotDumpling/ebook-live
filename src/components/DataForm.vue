@@ -1,14 +1,15 @@
 <template lang="pug">
-el-form(:model="data" label-position="right" label-width="100px")
-  el-form-item(v-for="key of Object.keys(data)" :label="key" :key="key")
-    el-input(v-model="data[key]" :type="data[key].length < 50? 'text': 'textarea'" autosize)
-el-form#add-form(:model="temp")
-  el-form-item#key-input
-    el-input(v-model="temp.key")
-  el-form-item#value-input
-    el-input(v-model="temp.value")
-  el-form-item
-    el-button(type="primary" @click="addAttribute" icon="el-icon-plus" circle plain)
+main
+  el-form(:model="data" label-position="right" label-width="100px")
+    el-form-item(v-for="key of Object.keys(data)" :label="key" :key="key")
+      el-input(v-model="data[key]" :type="data[key].length < 50? 'text': 'textarea'" autosize)
+  el-form#add-form(:model="temp")
+    el-form-item#key-input
+      el-input(v-model="temp.key")
+    el-form-item#value-input
+      el-input(v-model="temp.value")
+    el-form-item
+      el-button(type="primary" @click="addAttribute" icon="el-icon-plus" circle plain)
 </template>
 
 <script lang="ts" setup>
@@ -33,6 +34,9 @@ function addAttribute() {
 </script>
 
 <style scoped>
+main {
+  margin: 30px;
+}
 #add-form {
   display: flex;
 }

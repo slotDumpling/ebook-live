@@ -27,10 +27,13 @@ section#container(v-loading="loading")
             i.el-icon-more-outline
             span &nbsp;Others
           el-menu-item(@click="switchMetadata" index="3") Metadata
-  main#wang-editor(v-show="fileObj.editedFileType === 'text'")
-  main#code-editor(v-if="fileObj.editedFileType === 'style'")
+  //- main#wang-editor
+  main(v-show="fileObj.editedFileType === 'text'")
+    keep-alive
+      text-editor(v-model:text="editorText" @add-image="addImage" :key="fileObj.editedFilePath")
+  main(v-if="fileObj.editedFileType === 'style'")
     code-editor(v-model:text="cssText" :key="fileObj.editedFilePath")
-  main#form(v-if="fileObj.editedFileType === 'metadata'")
+  main(v-if="fileObj.editedFileType === 'metadata'")
     data-form(v-bind:data="metadata")
 input(type="file" ref="fileInput" accept=".epub, .mobi" v-show="false" @change="fileChange")
 el-button.aside-button(v-show="screenNarrow" @click="switchAside" circle :icon="`el-icon-arrow-${showAside? 'left': 'right'}`" type="primary")
@@ -38,7 +41,6 @@ el-button.aside-button(v-show="screenNarrow" @click="switchAside" circle :icon="
 
 <script lang="ts" setup>
 import { saveAs } from 'file-saver'
-import Editor from 'wangeditor'
 import { ref, reactive, onMounted } from 'vue'
 import type { CSSProperties } from 'vue'
 import { ElMessage } from 'element-plus'
@@ -49,58 +51,24 @@ import FileUrl from '../lib/url'
 import CodeEditor from './CodeEditor.vue'
 import DataForm from './DataForm.vue'
 import MobiAlert from './MobiAlert.vue'
+import TextEditor from './TextEditor.vue'
 
 interface Strings {
   [propName: string]: string
 }
 
 onMounted(async() => {
-  createEditor('')
-  // load demo.epub
   const blob = await (await fetch('./demo.epub')).blob()
   const file = new File([blob], 'demo.epub')
   loadEpub(file)
 })
 
-let editor: Editor
-function createEditor(text: string) {
-  if (editor) editor.destroy()
-  editor = new Editor('#wang-editor')
-  editor.config.excludeMenus = [
-    'fontSize',
-    'fontName',
-    'lineHeight',
-    'video',
-    'foreColor',
-    'backColor',
-    'link',
-    'list',
-    'todo',
-    'emoticon',
-    'video',
-    'table',
-    'code'
-  ]
-  editor.config.showFullScreen = false
-  editor.config.menuTooltipPosition = 'down'
-  editor.config.placeholder = ''
-  editor.config.zIndex = 50
-  editor.config.showLinkImg = false
-  editor.config.uploadImgMaxLength = 1
-  editor.config.customUploadImg = async (files: File[], insertImage: (arg0: string) => void) => {
-    const file = files[0]
-    const url = URL.createObjectURL(file)
-    insertImage(url)
-    if (epub === undefined) return 
-    const filePath = await epub.addImage(file)
-    fileUrl.set(filePath, url)
+const editorText = ref('')
+async function addImage(file: File, url: string) {
+  if (fileObj.type === 'epub') {
+    const filepath = await epub.addImage(file)
+    fileUrl.set(filepath, url)
   }
-  editor.create()
-  editor.txt.html(text)
-  editor.config.zIndex = 1
-  setTimeout(() => {
-    editor.history.observe()
-  }, 100)
 }
 
 const fileInput = ref<HTMLElement>()
@@ -127,9 +95,10 @@ async function loadMobi(file: File) {
   fileObj.textFileList = []
   fileObj.styleFileList = []
   fileObj.editedFilePath = ''
+  fileObj.editedFileType = 'text'
   fileUrl.setUrls(mobi.imageBlobs)
   mobi.updateImageSrc(fileUrl.urlMap)
-  createEditor(mobi.getText())
+  editorText.value = mobi.getText()
   setStyle('', '.w-e-text ')
 }
 
@@ -184,16 +153,17 @@ async function switchTextFile(filePath: string) {
   if (fileObj.editedFilePath !== '') await saveChange()
   await epub.updateImageSrc(filePath, fileUrl.urlMap)
   const text = await epub.getTextBody(filePath)
+  editorText.value = text
   fileObj.editedFilePath = filePath
   fileObj.editedFileType = 'text'
-  createEditor(text)
+  // createEditor(text)
   await parseStyle(filePath)
 }
 
 const cssText = ref('')
 async function switchStyleFile(filePath: string) {
   await saveChange()
-  createEditor('')
+  // createEditor('')
   cssText.value = await epub.getCssText(filePath)
   fileObj.editedFilePath = filePath
   fileObj.editedFileType = 'style'
@@ -220,7 +190,7 @@ async function saveChange() {
   if (filePath === '') return
   const type = fileObj.editedFileType
   if (type === 'text') {
-    const text = editor.txt.html() || ''
+    const text = editorText.value
     await epub.saveTextFile(filePath, text, fileUrl.pathMap)
   } else if (type === 'style') {
     epub.saveStyleFile(filePath, cssText.value)
@@ -233,7 +203,7 @@ const saving = ref(false)
 async function saveFile() {
   if (fileObj.type === 'mobi') {
     if (mobi === undefined) return
-    const text = editor.txt.html() || ''
+    const text = editorText.value
     mobi.setText(text)
     saveAs(mobi.saveFile(), 'test.mobi')
   } else {
@@ -339,29 +309,6 @@ main {
   min-width: 300px;
   overflow-y: overlay;
   box-sizing: border-box;
-}
-#code-editor {
   background-color: #eee;
-  padding: 20px;
-}
-#form {
-  padding: 30px;
-  background-color: #eee;
-}
-:deep(.w-e-text-container) {
-  flex: 1;
-  overflow-y: scroll;
-  text-align: justify;
-  display: flex;
-  justify-content: center;
-  background-color: #eee;
-}
-:deep(.w-e-text) {
-  overflow: initial;
-  max-width: 40em;
-  background-color: #fff;
-  margin: 1em 0;
-  height: fit-content !important;
-  padding: 2em;
 }
 </style>

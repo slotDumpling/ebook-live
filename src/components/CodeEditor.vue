@@ -1,5 +1,5 @@
 <template lang="pug">
-div(ref="cm")
+div#cm(ref="cm")
 </template>
 
 <script setup lang="ts">
@@ -29,6 +29,9 @@ onMounted(() => {
 </script>
 
 <style scoped>
+#cm {
+  margin: 30px;
+}
 :deep(.CodeMirror) {
   font-family: Consolas, Monaco, monospace;
   height: auto;
