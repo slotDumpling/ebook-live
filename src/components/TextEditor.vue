@@ -22,6 +22,9 @@ let editor: Editor
 const we = ref<HTMLElement>()
 function createEditor(text: string) {
   if (editor) editor.destroy()
+  if (!we.value) return
+  console.log(we.value)
+  we.value.innerHTML = ''
   editor = new Editor(we.value)
   editor.config.menus = [
     'head',
