@@ -22,9 +22,6 @@ let editor: Editor
 const we = ref<HTMLElement>()
 function createEditor(text: string) {
   if (editor) editor.destroy()
-  if (!we.value) return
-  console.log(we.value)
-  we.value.innerHTML = ''
   editor = new Editor(we.value)
   editor.config.menus = [
     'head',
@@ -76,7 +73,7 @@ function zoomIn() {
   zoom.value += 0.1
 }
 function zoomOut() {
-  if (zoom.value >= 0.2)
+  if (zoom.value >= 0.5)
   zoom.value -= 0.1
 }
 

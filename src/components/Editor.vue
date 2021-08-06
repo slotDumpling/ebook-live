@@ -27,14 +27,11 @@ section#container(v-loading="loading")
             i.el-icon-more-outline
             span &nbsp;Others
           el-menu-item(@click="switchMetadata" index="3") Metadata
-  //- main#wang-editor
-  main(v-show="fileObj.editedFileType === 'text'")
+  main
     keep-alive
-      text-editor(v-model:text="editorText" @add-image="addImage" :key="fileObj.editedFilePath")
-  main(v-if="fileObj.editedFileType === 'style'")
-    code-editor(v-model:text="cssText" :key="fileObj.editedFilePath")
-  main(v-if="fileObj.editedFileType === 'metadata'")
-    data-form(v-bind:data="metadata")
+      text-editor(v-model:text="editorText" @add-image="addImage" :key="fileObj.editedFilePath" v-if="fileObj.editedFileType === 'text'")
+    code-editor(v-model:text="cssText" :key="fileObj.editedFilePath" v-if="fileObj.editedFileType === 'style'")
+    data-form(v-bind:data="metadata" v-if="fileObj.editedFileType === 'metadata'")
 input(type="file" ref="fileInput" accept=".epub, .mobi" v-show="false" @change="fileChange")
 el-button.aside-button(v-show="screenNarrow" @click="switchAside" circle :icon="`el-icon-arrow-${showAside? 'left': 'right'}`" type="primary")
 </template>
@@ -94,7 +91,7 @@ async function loadMobi(file: File) {
   fileObj.files = []
   fileObj.textFileList = []
   fileObj.styleFileList = []
-  fileObj.editedFilePath = ''
+  fileObj.editedFilePath = file.name
   fileObj.editedFileType = 'text'
   fileUrl.setUrls(mobi.imageBlobs)
   mobi.updateImageSrc(fileUrl.urlMap)
@@ -156,14 +153,12 @@ async function switchTextFile(filePath: string) {
   editorText.value = text
   fileObj.editedFilePath = filePath
   fileObj.editedFileType = 'text'
-  // createEditor(text)
   await parseStyle(filePath)
 }
 
 const cssText = ref('')
 async function switchStyleFile(filePath: string) {
   await saveChange()
-  // createEditor('')
   cssText.value = await epub.getCssText(filePath)
   fileObj.editedFilePath = filePath
   fileObj.editedFileType = 'style'
