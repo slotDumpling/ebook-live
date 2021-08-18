@@ -8,7 +8,7 @@ el-button-group#zoom
 <script lang="ts" setup>
 import Editor from 'wangeditor'
 import i18next from 'i18next'
-import { defineProps, defineEmits, onMounted, ref } from 'vue'
+import { defineProps, defineEmits, onMounted, ref, watch } from 'vue'
 
 const props = defineProps({
   text: {

@@ -1,6 +1,6 @@
 <template lang="pug">
 section#container(v-loading="loading")
-  aside(:style="screenNarrow? asideStyle: undefined")
+  aside
     .aside-box#input
       el-input(placeholder="请打开文件" v-model="fileObj.name")
         template(#append)
@@ -33,7 +33,7 @@ section#container(v-loading="loading")
     code-editor(v-model:text="cssText" :key="fileObj.editedFilePath" v-if="fileObj.editedFileType === 'style'")
     data-form(v-bind:data="metadata" v-if="fileObj.editedFileType === 'metadata'")
 input(type="file" ref="fileInput" accept=".epub, .mobi" v-show="false" @change="fileChange")
-el-button.aside-button(v-show="screenNarrow" @click="switchAside" circle :icon="`el-icon-arrow-${showAside? 'left': 'right'}`" type="primary")
+el-button.aside-button(@click="switchAside" circle icon="el-icon-menu" type="primary")
 </template>
 
 <script lang="ts" setup>
@@ -212,25 +212,13 @@ async function saveFile() {
 }
 
 // responsive aside
-const screenNarrow = ref(false)
-const showAside = ref(false)
-const asideStyle = ref<CSSProperties>({
-  position: 'fixed',
-  transform: 'translateX(-100%)',
-  transition: 'all 0.3s ease-out',
-  boxShadow: '0 2px 10px 0 rgba(0, 0, 0, 0.1)'
-})
+const asideTransform = ref('translateX(-100%)')
 function switchAside() {
-  if (showAside.value === false) {
-    asideStyle.value.transform = 'translateX(0)'
-    showAside.value = true
+  if (asideTransform.value === 'translateX(-100%)') {
+    asideTransform.value = 'translateX(0)'
   } else {
-    asideStyle.value.transform = 'translateX(-100%)'
-    showAside.value = false
+    asideTransform.value = 'translateX(-100%)'
   }
-}
-window.onresize = () => {
-  screenNarrow.value = window.innerWidth < 800
 }
 </script>
 
@@ -294,6 +282,7 @@ aside {
   left: 10px;
   bottom: 10px;
   z-index: 100;
+  display: none;
 }
 main {
   flex: 1;
@@ -305,5 +294,16 @@ main {
   overflow-y: overlay;
   box-sizing: border-box;
   background-color: #eee;
+}
+@media screen and (max-width: 800px) {
+  aside {
+    position: fixed;
+    transform: v-bind(asideTransform);
+    transition: all 0.3s ease-out;
+    box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.1);
+  }
+  .aside-button {
+    display: initial;
+  }
 }
 </style>
