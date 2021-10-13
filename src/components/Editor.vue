@@ -39,7 +39,6 @@ el-button.aside-button(@click="switchAside" circle icon="el-icon-menu" type="pri
 <script lang="ts" setup>
 import { saveAs } from 'file-saver'
 import { ref, reactive, onMounted } from 'vue'
-import type { CSSProperties } from 'vue'
 import { ElMessage } from 'element-plus'
 import { EpubFile } from '../lib/epub'
 import { MobiFile } from '../lib/mobi'
