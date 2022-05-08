@@ -1,11 +1,12 @@
 import { createRouter, createWebHashHistory, RouteRecordRaw } from 'vue-router'
-import Editor from '../components/Editor.vue'
-import Test from '../components/Test.vue'
+const Editor = () => import('../components/Editor.vue')
+const Test  = () => import('../components/Test.vue')
 
 const routes: Array<RouteRecordRaw> = [
+  { path: '/editor/:id', component: Editor },
   { path: '/editor', component: Editor },
   { path: '/test', component: Test },
-  { path: '/', redirect: '/editor' }
+  { path: '/', redirect: '/editor' },
 ]
 
 const router = createRouter({

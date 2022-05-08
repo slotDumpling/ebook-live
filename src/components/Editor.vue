@@ -2,6 +2,7 @@
 section#container(v-loading="loading")
   aside
     .aside-box#input
+      input(type="file" ref="fileInput" accept=".epub, .mobi" v-show="false" @change="fileChange")
       el-input(placeholder="请打开文件" v-model="fileObj.name")
         template(#append)
           el-button(icon="el-icon-folder-opened" @click="fakeUpload")
@@ -32,8 +33,7 @@ section#container(v-loading="loading")
       text-editor(v-model:text="editorText" @add-image="addImage" :key="fileObj.editedFilePath" v-if="fileObj.editedFileType === 'text'")
     code-editor(v-model:text="cssText" :key="fileObj.editedFilePath" v-if="fileObj.editedFileType === 'style'")
     data-form(v-bind:data="metadata" v-if="fileObj.editedFileType === 'metadata'")
-input(type="file" ref="fileInput" accept=".epub, .mobi" v-show="false" @change="fileChange")
-el-button.aside-button(@click="switchAside" circle icon="el-icon-menu" type="primary")
+  el-button.aside-button(@click="switchAside" circle icon="el-icon-menu" type="primary")
 </template>
 
 <script lang="ts" setup>
@@ -49,14 +49,13 @@ import DataForm from './DataForm.vue'
 import MobiAlert from './MobiAlert.vue'
 import TextEditor from './TextEditor.vue'
 
-interface Strings {
-  [propName: string]: string
-}
-
-onMounted(async() => {
+onMounted(async () => {
+  let file: File
   const blob = await (await fetch('./demo.epub')).blob()
-  const file = new File([blob], 'demo.epub')
-  loadEpub(file)
+  file = new File([blob], 'demo.epub', {
+    type: 'application/epub+zip',
+  })
+  loadFile(file)
 })
 
 const editorText = ref('')
@@ -69,18 +68,23 @@ async function addImage(file: File, url: string) {
 
 const fileInput = ref<HTMLElement>()
 function fakeUpload(): void {
-  (fileInput.value as HTMLElement).click()
+  ;(fileInput.value as HTMLElement).click()
 }
 function fileChange(e: Event): void {
   const input = e.target as HTMLInputElement
   if (input.files === null || input.files.length === 0) return
   const file = input.files[0]
+  loadFile(file)
+}
+
+async function loadFile(file: File) {
   if (file.type === 'application/epub+zip') {
     loadEpub(file)
   } else {
     loadMobi(file)
   }
 }
+
 let mobi: MobiFile
 async function loadMobi(file: File) {
   mobi = new MobiFile(await file.arrayBuffer())
@@ -99,17 +103,17 @@ async function loadMobi(file: File) {
 }
 
 let epub: EpubFile
-const nav = ref<Strings>({})
-const loading = ref(true)
+const nav = ref<Record<string, string>>({})
+const loading = ref(false)
 const fileUrl = new FileUrl()
 interface FileObj {
   name: string
-  type: 'epub'|'mobi'
+  type: 'epub' | 'mobi'
   files: string[]
   textFileList: string[]
   styleFileList: string[]
   editedFilePath: string
-  editedFileType: 'text'|'style'|'metadata'
+  editedFileType: 'text' | 'style' | 'metadata'
 }
 const fileObj: FileObj = reactive({
   name: '',
@@ -118,7 +122,7 @@ const fileObj: FileObj = reactive({
   textFileList: [],
   styleFileList: [],
   editedFilePath: '',
-  editedFileType: 'text'
+  editedFileType: 'text',
 })
 async function loadEpub(file: File) {
   try {
@@ -133,7 +137,7 @@ async function loadEpub(file: File) {
     fileObj.styleFileList = epub.styleFileList
     fileObj.editedFilePath = ''
     await switchTextFile(fileObj.textFileList[0])
-  } catch(e) {
+  } catch (e) {
     console.error(e)
     ElMessage.error('加载失败')
   } finally {
@@ -142,8 +146,6 @@ async function loadEpub(file: File) {
     }, 200)
   }
 }
-
-
 
 async function switchTextFile(filePath: string) {
   if (fileObj.editedFilePath !== '') await saveChange()
@@ -173,7 +175,7 @@ async function parseStyle(filePath: string) {
   setStyle(styleText, '.w-e-text ')
 }
 
-const metadata = ref<Strings>({})
+const metadata = ref<Record<string, string>>({})
 function switchMetadata() {
   metadata.value = epub.getMetadata()
   fileObj.editedFileType = 'metadata'
@@ -281,7 +283,6 @@ aside {
   left: 10px;
   bottom: 10px;
   z-index: 100;
-  display: none;
 }
 main {
   flex: 1;
@@ -301,8 +302,11 @@ main {
     transition: all 0.3s ease-out;
     box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.1);
   }
+}
+
+@media screen and (min-width: 800px) {
   .aside-button {
-    display: initial;
+    display: none;
   }
 }
 </style>

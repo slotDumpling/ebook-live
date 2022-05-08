@@ -13,6 +13,9 @@ export default class FileUrl {
     this.urlMap[filePath] = url
     this.pathMap[url] = filePath
   }
+  setUrl(path: string, blob: Blob) {
+    this.set(path, URL.createObjectURL(blob))
+  }
   setUrls(imageList:{ path: string, blob: Blob }[]) {
     this.revoke()
     imageList.forEach(img => {

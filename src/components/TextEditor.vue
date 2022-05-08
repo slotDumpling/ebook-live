@@ -8,13 +8,13 @@ el-button-group#zoom
 <script lang="ts" setup>
 import Editor from 'wangeditor'
 import i18next from 'i18next'
-import { defineProps, defineEmits, onMounted, ref, watch } from 'vue'
+import { defineProps, defineEmits, onMounted, ref } from 'vue'
 
 const props = defineProps({
   text: {
     type: String,
-    required: true
-  }
+    required: true,
+  },
 })
 const emit = defineEmits(['update:text', 'addImage'])
 
@@ -46,7 +46,10 @@ function createEditor(text: string) {
   editor.config.zIndex = 50
   editor.config.showLinkImg = false
   editor.config.uploadImgMaxLength = 1
-  editor.config.customUploadImg = async (files: File[], insertImage: (arg0: string) => void) => {
+  editor.config.customUploadImg = async (
+    files: File[],
+    insertImage: (arg0: string) => void
+  ) => {
     const file = files[0]
     const url = URL.createObjectURL(file)
     insertImage(url)
@@ -58,7 +61,7 @@ function createEditor(text: string) {
   editor.config.onchange = () => {
     emit('update:text', editor.txt.html())
   }
-  
+
   setTimeout(() => {
     editor.history.observe()
   }, 100)
@@ -73,10 +76,8 @@ function zoomIn() {
   zoom.value += 0.1
 }
 function zoomOut() {
-  if (zoom.value >= 0.5)
-  zoom.value -= 0.1
+  if (zoom.value >= 0.5) zoom.value -= 0.1
 }
-
 </script>
 
 <style scoped>

@@ -30,20 +30,17 @@ function getPath(filePath: string): string {
 function getListPath(fileList: string[]): string {
   // get the most frequent path of the file list.
   const paths = fileList.map(getPath)
-  let path =  _.head(_(paths).countBy().entries().maxBy(_.last)) as string
+  let path = _.head(_(paths).countBy().entries().maxBy(_.last)) as string
   return path
 }
 
-interface Docs {
-  [propName: string]: Document
-}
-interface Strings {
-  [propName: string]: string
-}
+type StringRec = Record<string, string>
+
 interface imageBlob {
   path: string
   blob: Blob
 }
+
 class EpubFile {
   zip: JSzip
   loaded: boolean
@@ -52,7 +49,7 @@ class EpubFile {
   name: string
   fileList: string[]
   textFileList: string[]
-  textDocs: Docs
+  textDocs: Record<string, Document>
   textPath: string
   styleFileList: string[]
   stylePath: string
@@ -64,7 +61,7 @@ class EpubFile {
   ncxFilePath: string
   ncxDoc: Document
   constructor(file?: File) {
-    this.zip = new JSzip
+    this.zip = new JSzip()
     this.loaded = false
     this.dp = new DOMParser()
     this.name = ''
@@ -93,19 +90,19 @@ class EpubFile {
       await this.parseOpf()
       await this.parseNcx()
       this.loaded = true
-    } catch(e) {
-      throw(e)
+    } catch (e) {
+      throw e
     }
   }
   async loadAsZip() {
-    if (this.file === undefined) throw(new Error('file not found.')) 
+    if (this.file === undefined) throw new Error('file not found.')
     this.zip = await JSzip.loadAsync(this.file)
     this.fileList = Object.keys(this.zip.files)
   }
   async getOpfFilePath(): Promise<string> {
     const fallback = (): string => {
-      const path = this.fileList.find(name => /[\s\S]+\.opf/g.test(name))
-      if (path === undefined) throw(new Error('opf filepath not found'))
+      const path = this.fileList.find((name) => /[\s\S]+\.opf/g.test(name))
+      if (path === undefined) throw new Error('opf filepath not found')
       return path
     }
     const containerFile = this.zip.file('META-INF/container.xml')
@@ -124,32 +121,35 @@ class EpubFile {
     const opfPath = getPath(this.opfFilePath)
     // get and parse content.opf to dom tree
     const opfFile = this.zip.file(this.opfFilePath)
-    if (opfFile === null) throw(new Error('opf file not found'))
+    if (opfFile === null) throw new Error('opf file not found')
     const contentText = await opfFile.async('string')
     this.opfDoc = this.dp.parseFromString(contentText, 'text/xml')
     // get file paths listed in opf file
     const manifestEl = this.opfDoc.getElementsByTagName('manifest')[0]
-    if (manifestEl === undefined) throw(new Error('the opf file has no manifest'))
+    if (manifestEl === undefined)
+      throw new Error('the opf file has no manifest')
     const fileList = [...manifestEl.children]
-      .map(el => el.getAttribute('href'))
-      .filter(el => el !== null) as string[]
+      .map((el) => el.getAttribute('href'))
+      .filter((el) => el !== null) as string[]
 
     this.textFileList = fileList
-      .filter(name => /[\s\S]+\.(xhtml|html)/g.test(name))
-      .map(name => rel2abs(opfPath, name))
+      .filter((name) => /[\s\S]+\.(xhtml|html)/g.test(name))
+      .map((name) => rel2abs(opfPath, name))
     this.textPath = getListPath(this.textFileList)
     // including styleSheets not listed in manifest.
-    this.styleFileList = this.fileList
-      .filter(name => /[\s\S]+\.css/g.test(name))
+    this.styleFileList = this.fileList.filter((name) =>
+      /[\s\S]+\.css/g.test(name)
+    )
     this.stylePath = getListPath(this.styleFileList)
     // including images not listed in manifest.
-    this.imageFileList = this.fileList
-      .filter(name => /[\s\S]+\.(png|jpe?g|gif|svg)/g.test(name))
+    this.imageFileList = this.fileList.filter((name) =>
+      /[\s\S]+\.(png|jpe?g|gif|svg)/g.test(name)
+    )
     this.imagePath = getListPath(this.imageFileList)
     for (let path of this.imageFileList) {
       this.imageBlobs.push({
-        path: path, 
-        blob: await this.getImage(path)
+        path: path,
+        blob: await this.getImage(path),
       })
     }
   }
@@ -164,7 +164,7 @@ class EpubFile {
     this.textDocs[filePath] = doc
     return doc
   }
-  async updateImageSrc(filePath: string, urlMap: Strings) {
+  async updateImageSrc(filePath: string, urlMap: StringRec) {
     const doc = await this.getTextDoc(filePath)
     const imgEls = doc.getElementsByTagName('img')
     for (let el of imgEls) {
@@ -181,8 +181,8 @@ class EpubFile {
   }
   getNcxFilePath(): string {
     const fallback = (): string => {
-      const path = this.fileList.find(name => /[\s\S]+\.ncx/g.test(name))
-      if (path === undefined) throw(new Error('ncx filepath not found'))
+      const path = this.fileList.find((name) => /[\s\S]+\.ncx/g.test(name))
+      if (path === undefined) throw new Error('ncx filepath not found')
       return path
     }
     const doc = this.opfDoc
@@ -195,15 +195,15 @@ class EpubFile {
   async parseNcx() {
     this.ncxFilePath = this.getNcxFilePath()
     const ncxFile = this.zip.file(this.ncxFilePath)
-    if (ncxFile === null) throw(new Error('.ncx file not found'))
+    if (ncxFile === null) throw new Error('.ncx file not found')
     const ncxText = await ncxFile.async('text')
     this.ncxDoc = this.dp.parseFromString(ncxText, 'text/xml')
   }
-  async getNavFlat(): Promise<Strings> {
+  async getNavFlat(): Promise<StringRec> {
     const doc = this.ncxDoc
     const navPoints = [...doc.getElementsByTagName('navPoint')]
-    const nav: Strings = {}
-    navPoints.forEach(el => {
+    const nav: StringRec = {}
+    navPoints.forEach((el) => {
       const text = el.getElementsByTagName('text')[0].innerHTML
       let filePath = el.getElementsByTagName('content')[0].getAttribute('src')
       if (filePath === null) return
@@ -213,13 +213,13 @@ class EpubFile {
     })
     return nav
   }
-  getMetadata(): Strings {
+  getMetadata(): StringRec {
     const doc = this.opfDoc
     const metadataEl = doc.getElementsByTagName('metadata')[0]
     if (!metadataEl) return {}
     const metadata = [...metadataEl.children]
-    const result: Strings = {}
-    metadata.forEach(el => {
+    const result: StringRec = {}
+    metadata.forEach((el) => {
       let tag = el.tagName
       if (/dc:[\s\S]+/g.test(tag) === false) return
       tag = tag.slice(3)
@@ -231,13 +231,13 @@ class EpubFile {
   async getCssListOfTextFile(filePath: string): Promise<string[]> {
     const doc = await this.getTextDoc(filePath)
     const cssList = [...doc.getElementsByTagName('link')]
-      .map(e => {
+      .map((e) => {
         const path = e.getAttribute('href')
         if (path === null) return ''
         return path
       })
-      .filter(p => p !== '')
-      .map(p => rel2abs(filePath, p))
+      .filter((p) => p !== '')
+      .map((p) => rel2abs(filePath, p))
     return cssList // with full path
   }
   async getInternalStyle(filePath: string): Promise<string> {
@@ -245,7 +245,7 @@ class EpubFile {
     const styleEls = [...doc.getElementsByTagName('style')]
     if (styleEls.length === 0) return ''
     const styleText = styleEls
-      .map(el => el.innerHTML)
+      .map((el) => el.innerHTML)
       .reduce((t0, t1) => `${t0}\n${t1}`)
     return styleText
   }
@@ -256,7 +256,7 @@ class EpubFile {
   }
   async getImage(filePath: string) {
     const file = this.zip.file(filePath)
-    if (file === null) throw(new Error('file not found'))
+    if (file === null) throw new Error('file not found')
     return file.async('blob')
   }
   async addImage(file: File): Promise<string> {
@@ -273,7 +273,7 @@ class EpubFile {
     manifest.appendChild(item)
     return filePath
   }
-  async saveTextFile(filePath: string, bodyText: string, pathMap: Strings) {
+  async saveTextFile(filePath: string, bodyText: string, pathMap: StringRec) {
     const doc = await this.getTextDoc(filePath)
     doc.body.innerHTML = bodyText
     const imgElements = doc.getElementsByTagName('img')
@@ -294,7 +294,7 @@ class EpubFile {
     const text = this.opfDoc.documentElement.outerHTML as string
     this.zip.file(this.opfFilePath, text)
   }
-  async saveMetadata(data: Strings) {
+  async saveMetadata(data: StringRec) {
     const keys = Object.keys(data)
     const doc = this.opfDoc
     let metadataEl = doc.getElementsByTagName('metadata')[0] as Element
