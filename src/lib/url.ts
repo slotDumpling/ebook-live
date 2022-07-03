@@ -1,10 +1,6 @@
-interface Strings {
-  [propName: string]: string
-}
-
 export default class FileUrl {
-  urlMap: Strings
-  pathMap: Strings
+  urlMap: Record<string, string>
+  pathMap: Record<string, string>
   constructor() {
     this.urlMap = {}
     this.pathMap = {}

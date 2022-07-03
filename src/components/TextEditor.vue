@@ -1,8 +1,5 @@
 <template lang="pug">
 div#we(ref="we")
-el-button-group#zoom
-  el-button(round icon="el-icon-zoom-out" size="medium" @click="zoomOut")
-  el-button(round icon="el-icon-zoom-in" size="medium" @click="zoomIn")
 </template>
 
 <script lang="ts" setup>
@@ -70,14 +67,6 @@ function createEditor(text: string) {
 onMounted(() => {
   createEditor(props.text)
 })
-
-const zoom = ref(1)
-function zoomIn() {
-  zoom.value += 0.1
-}
-function zoomOut() {
-  if (zoom.value >= 0.5) zoom.value -= 0.1
-}
 </script>
 
 <style scoped>
@@ -85,12 +74,6 @@ function zoomOut() {
   display: flex;
   flex-direction: column;
   height: 100%;
-}
-#zoom {
-  position: absolute;
-  bottom: 30px;
-  right: 30px;
-  z-index: 100;
 }
 :deep(.w-e-text-container) {
   flex: 1;
@@ -107,6 +90,5 @@ function zoomOut() {
   margin: 1em 0;
   height: fit-content !important;
   padding: 2em;
-  zoom: v-bind(zoom);
 }
 </style>

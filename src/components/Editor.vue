@@ -30,15 +30,15 @@ section#container(v-loading="loading")
           el-menu-item(@click="switchMetadata" index="3") Metadata
   main
     keep-alive
-      text-editor(v-model:text="editorText" @add-image="addImage" :key="fileObj.editedFilePath" v-if="fileObj.editedFileType === 'text'")
-    code-editor(v-model:text="cssText" :key="fileObj.editedFilePath" v-if="fileObj.editedFileType === 'style'")
-    data-form(v-bind:data="metadata" v-if="fileObj.editedFileType === 'metadata'")
+      text-editor(v-model:text="editorText" @add-image="addImage" :key="fileObj.editedFilePath" v-if="editType === 'text'")
+    code-editor(v-model:text="cssText" :key="fileObj.editedFilePath" v-if="editType === 'style'")
+    data-form(v-bind:data="metadata" v-if="editType === 'metadata'")
   el-button.aside-button(@click="switchAside" circle icon="el-icon-menu" type="primary")
 </template>
 
 <script lang="ts" setup>
 import { saveAs } from 'file-saver'
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
 import { EpubFile } from '../lib/epub'
 import { MobiFile } from '../lib/mobi'
@@ -95,7 +95,6 @@ async function loadMobi(file: File) {
   fileObj.textFileList = []
   fileObj.styleFileList = []
   fileObj.editedFilePath = file.name
-  fileObj.editedFileType = 'text'
   fileUrl.setUrls(mobi.imageBlobs)
   mobi.updateImageSrc(fileUrl.urlMap)
   editorText.value = mobi.getText()
@@ -104,8 +103,9 @@ async function loadMobi(file: File) {
 
 let epub: EpubFile
 const nav = ref<Record<string, string>>({})
-const loading = ref(false)
+const loading = ref(true)
 const fileUrl = new FileUrl()
+const editType = ref<'text' | 'style' | 'metadata'>('text')
 interface FileObj {
   name: string
   type: 'epub' | 'mobi'
@@ -113,7 +113,6 @@ interface FileObj {
   textFileList: string[]
   styleFileList: string[]
   editedFilePath: string
-  editedFileType: 'text' | 'style' | 'metadata'
 }
 const fileObj: FileObj = reactive({
   name: '',
@@ -141,9 +140,8 @@ async function loadEpub(file: File) {
     console.error(e)
     ElMessage.error('加载失败')
   } finally {
-    setTimeout(() => {
-      loading.value = false
-    }, 200)
+    await nextTick()
+    loading.value = false
   }
 }
 
@@ -153,7 +151,7 @@ async function switchTextFile(filePath: string) {
   const text = await epub.getTextBody(filePath)
   editorText.value = text
   fileObj.editedFilePath = filePath
-  fileObj.editedFileType = 'text'
+  editType.value = 'text'
   await parseStyle(filePath)
 }
 
@@ -162,7 +160,7 @@ async function switchStyleFile(filePath: string) {
   await saveChange()
   cssText.value = await epub.getCssText(filePath)
   fileObj.editedFilePath = filePath
-  fileObj.editedFileType = 'style'
+  editType.value = 'style'
 }
 
 async function parseStyle(filePath: string) {
@@ -178,13 +176,13 @@ async function parseStyle(filePath: string) {
 const metadata = ref<Record<string, string>>({})
 function switchMetadata() {
   metadata.value = epub.getMetadata()
-  fileObj.editedFileType = 'metadata'
+  editType.value = 'metadata'
 }
 
 async function saveChange() {
   const filePath = fileObj.editedFilePath
   if (filePath === '') return
-  const type = fileObj.editedFileType
+  const type = editType.value
   if (type === 'text') {
     const text = editorText.value
     await epub.saveTextFile(filePath, text, fileUrl.pathMap)
