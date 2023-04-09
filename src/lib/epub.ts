@@ -160,7 +160,7 @@ class EpubFile {
     const textFile = this.zip.file(filePath)
     if (textFile === null) return new Document()
     const html = await textFile.async('string')
-    const doc = this.dp.parseFromString(html, 'text/html')
+    const doc = this.dp.parseFromString(html, 'application/xhtml+xml')
     this.textDocs[filePath] = doc
     return doc
   }
